@@ -7,7 +7,9 @@ const initialState = {
   questions: [],
   //loading, error , ready , active, finished
   status: "loading",
-  index:0
+  index: 0,
+  answer: null,
+  points: 0,
 };
 
 function reducer(state, action) {
@@ -28,15 +30,38 @@ function reducer(state, action) {
         ...state,
         status: "active",
       };
+    case "newAnswer": {
+      const question = state.questions.at(state.index);
+      return {
+        ...state,
+        answer: action.payload,
+        points:
+          action.payload === question.correctOption
+            ? state.points + question.points
+            : state.points,
+      };
+    }
+    case "nextQuestion": {
+      return {
+        ...state,
+        index: state.index + 1,
+        answer: null,
+      };
+    }
+
     default:
       throw new Error("Action unknown");
   }
 }
 
 function QuizProvider({ children }) {
-  const [{ questions, status, index }, dispatch] = useReducer(reducer, initialState);
+  const [{ answer, questions, status, index, points }, dispatch] = useReducer(
+    reducer,
+    initialState
+  );
 
   const numQuestions = questions.length;
+  const maxpoints = questions.reduce((prev, curr) => prev + curr.points, 0);
 
   useEffect(() => {
     async function fetchQuestions() {
@@ -53,7 +78,16 @@ function QuizProvider({ children }) {
 
   return (
     <QuizContext.Provider
-      value={{ index,numQuestions, questions, status, dispatch }}
+      value={{
+        points,
+        answer,
+        index,
+        numQuestions,
+        questions,
+        status,
+        dispatch,
+        maxpoints,
+      }}
     >
       {children}
     </QuizContext.Provider>
